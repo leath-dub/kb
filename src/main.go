@@ -54,6 +54,14 @@ func getBoardCards(c *gin.Context) {
     id := c.Param("id")
     var cards = []card {}
 
+    // first check that the id is valid
+    res, err := db.Exec("SELECT * FROM boards WHERE id = ?", id)
+    nrows, err := res.RowsAffected()
+    if (nrows == 0) {
+        c.IndentedJSON(http.StatusNotFound, gin.H{"message": "board not found"})
+        return
+    }
+
     cardRows, err := db.Query(`
         SELECT cards.id, content, bid
         FROM cards
@@ -85,12 +93,14 @@ func postBoard(c *gin.Context) {
 
     // Try to write json to object
     if err := c.BindJSON(&newBoard); err != nil {
+        c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err})
         return
     }
 
     res, err := db.Exec("INSERT INTO boards (title) VALUES (?)", newBoard.Title)
     if (err != nil) {
-        log.Fatal(err)
+        c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err})
+        return
     }
 
     id, err := res.LastInsertId()
@@ -103,6 +113,7 @@ func postCardToBoard(c *gin.Context) {
     var newCard card
 
     if err := c.BindJSON(&newCard); err != nil {
+        c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err})
         return
     }
 
