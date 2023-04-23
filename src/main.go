@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-    "github.com/gin-contrib/cors"
+//    "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -56,12 +56,12 @@ func getBoardCards(c *gin.Context) {
     var cards = []card {}
 
     // first check that the id is valid
-    res, err := db.Exec("SELECT * FROM boards WHERE id = ?", id)
-    nrows, err := res.RowsAffected()
-    if (nrows == 0) {
+    rows, err := db.Query("SELECT * FROM boards WHERE id = ?", id)
+    if (!rows.Next()) {
         c.IndentedJSON(http.StatusNotFound, gin.H{"message": "board not found"})
         return
     }
+    rows.Close()
 
     cardRows, err := db.Query(`
         SELECT cards.id, content, bid
@@ -204,6 +204,20 @@ func createTables() {
     }
 }
 
+func CORSMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "*")
+
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    }
+}
+
 func main() {
     // setup database connection
     var err error
@@ -214,22 +228,15 @@ func main() {
     defer db.Close()
 
     createTables()
-	router := gin.Default()
-    corsConfig := cors.DefaultConfig()
-    corsConfig.AllowOrigins = []string{"http://localhost:3000"}
-    corsConfig.AllowCredentials = true
-    corsConfig.AddAllowMethods("OPTIONS")
-    corsConfig.AddAllowMethods("POST")
-    corsConfig.AddAllowMethods("GET")
-    corsConfig.AddAllowMethods("DEL")
-    router.Use(cors.New(corsConfig))
+	router := gin.New()
+    router.Use(CORSMiddleware())
 
 	router.GET("/", getBoards)
-	router.POST("/", postBoard)
+	router.POST("/create", postBoard)
     router.GET("/:id/card", getBoardCards)
-    router.POST("/:id/card", postCardToBoard)
+    router.POST("/:id/card/create", postCardToBoard)
     router.GET("/:id", getBoardByID)
-    router.DELETE("/:id", deleteBoardByID)
+    router.DELETE("/:id/delete", deleteBoardByID)
 
-	router.Run("localhost:8080")
+	router.Run(":8080")
 }
