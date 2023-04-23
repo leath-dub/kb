@@ -2,15 +2,13 @@
 package main
 
 import (
-	"context"
-	"database/sql"
-	"log"
-	"net/http"
-	"strconv"
-
-//    "github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	_ "github.com/mattn/go-sqlite3"
+    "context"
+    "database/sql"
+    "log"
+    "net/http"
+    "strconv"
+    "github.com/gin-gonic/gin"
+    _ "github.com/mattn/go-sqlite3"
 )
 
 type board struct {
@@ -229,11 +227,11 @@ func main() {
     defer db.Close()
 
     createTables()
-	router := gin.New()
+    router := gin.New()
     router.Use(CORSMiddleware())
 
-	router.GET("/", getBoards)
-	router.POST("/create", postBoard)
+    router.GET("/", getBoards)
+    router.POST("/create", postBoard)
     router.GET("/:id/card", getBoardCards)
     router.POST("/:id/card/create", postCardToBoard)
     router.GET("/:id", getBoardByID)
