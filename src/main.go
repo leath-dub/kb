@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+    "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -203,7 +204,6 @@ func createTables() {
     }
 }
 
-
 func main() {
     // setup database connection
     var err error
@@ -215,6 +215,15 @@ func main() {
 
     createTables()
 	router := gin.Default()
+    corsConfig := cors.DefaultConfig()
+    corsConfig.AllowOrigins = []string{"http://localhost:3000"}
+    corsConfig.AllowCredentials = true
+    corsConfig.AddAllowMethods("OPTIONS")
+    corsConfig.AddAllowMethods("POST")
+    corsConfig.AddAllowMethods("GET")
+    corsConfig.AddAllowMethods("DEL")
+    router.Use(cors.New(corsConfig))
+
 	router.GET("/", getBoards)
 	router.POST("/", postBoard)
     router.GET("/:id/card", getBoardCards)
